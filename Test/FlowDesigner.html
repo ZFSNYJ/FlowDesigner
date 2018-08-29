@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>联科BPM流程绘制</title>
+		
+		<link rel="stylesheet" href="../css/node.css" />
+		<link rel="stylesheet" href="../layui/css/layui.css" />
+		<link href="https://cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+		<link href="https://cdn.bootcss.com/jqueryui/1.12.1/jquery-ui.min.css" rel="stylesheet">
+		<link rel="stylesheet" href="../css/index.css" />
+		<link rel="stylesheet" href="../css/web.contextmenu.css" />
+
+		<style>
+			#Container {
+				height: 2000px;
+				width: 3000px;
+			}
+			
+			.canvasClass {
+				height: 830px;
+				/* 边框 */
+				border: 1px solid gray;
+				/* 网格背景图 */
+				background-image: url(../images/grid.jpeg);
+				/* 铺满 */
+				background-repeat: repeat;
+				/* 设置画布可滚动 */
+				overflow: scroll;
+				/* 设置层叠等级 */
+				z-index: -1;
+			}
+		</style>
+
+	</head>
+
+	<body class="layui-layout-body">
+
+		<div class="layui-layout layui-layout-admin">
+			<div class="layui-header">
+				<div class="layui-logo"><p>联科BPM流程绘制</p></div>
+				<!-- 左侧头部区域 -->
+				<ul class="layui-nav layui-layout-left">
+					<li class="layui-nav-item">
+						<a href="javascript: save();">
+							<i class="fa fa-floppy-o fa-2x showItemTxt" aria-hidden="true" type="3"><span id="saveStatus" class="layui-badge-dot" style="display: none;"></span></i>
+							<span hidden="hidden">保存流程</span>
+						</a>
+					</li>
+					<li class="layui-nav-item">
+						<a href="javascript: save2Photo();" download="myFlow">
+							<i class="fa fa-picture-o fa-2x showItemTxt" aria-hidden="true" type="3"></i>
+							<span hidden="hidden">保存为图片</span>
+						</a>
+					</li>
+					<li class="layui-nav-item">
+						<a href="javascript: undo();">
+							<i class="fa fa-undo fa-2x showItemTxt" aria-hidden="true" type="3"></i>
+							<span hidden="hidden">撤销</span>
+						</a>
+					</li>
+					<li class="layui-nav-item">
+						<a href="javascript: redo();">
+							<i class="fa fa-repeat fa-2x showItemTxt" aria-hidden="true" type="3"></i>
+							<span hidden="hidden">重做</span>
+						</a>
+					</li>
+					<li class="layui-nav-item">
+						<a href="javascript: clear();">
+							<i class="fa fa-refresh fa-spin fa-2x fa-fw showItemTxt" aria-hidden="true" type="3"></i>
+							<span hidden="hidden">重新绘制</span>
+						</a>
+					</li>
+					<li class="layui-nav-item">
+						<a id="showGridId" href="javascript: showGrid();">
+							<i class="fa fa-eye fa-2x showItemTxt" aria-hidden="true" type="3"></i>
+							<span hidden="hidden">隐藏网格</span>
+						</a>
+					</li>
+					<li class="layui-nav-item">
+						<a href="javascript: setting();">
+							<i class="fa fa-cog fa-spin fa-2x fa-fw showItemTxt" aria-hidden="true" type="3"></i>
+							<span hidden="hidden">设置</span>
+						</a>
+					</li>
+					<li class="layui-nav-item">
+						<a href="javascript: test();">测试按钮(通过JSON载入流程图)</a>
+					</li>
+				</ul>
+				<!-- 右侧头部区域 -->
+				<ul class="layui-nav layui-layout-right">
+					<li class="layui-nav-item">
+						<a href="javascript: void(0);">
+							<i class="fa fa-question-circle fa-2x" aria-hidden="true"></i>
+							<span hidden="hidden">帮助</span>
+						</a>
+						<dl class="layui-nav-child">
+							<dd>
+								<a href="javascript: helpDoc();"><p>帮助文档</p></a>
+							</dd>
+							<dd>
+								<a href="javascript: shortcutKey();"><p>快捷键大全</p></a>
+							</dd>
+						</dl>
+					</li>
+					<li class="layui-nav-item">
+						<a href="javascript: closeFrame();">
+							<i class="fa fa-times fa-2x showItemTxt" aria-hidden="true" type="3"></i>
+							<span hidden="hidden">退出</span>
+						</a>
+					</li>
+				</ul>
+			</div>
+
+			<div id="toolsModelId" style="width: 200px; height: 1000px; position: absolute; background-color: #333;">
+				<div>
+					<!-- 左侧导航区域 -->
+					<dl class="list_dl" style="z-index: 1; position: absolute; top: 20px; left: 10px; border: 1px black solid;">
+						<dt class="list_dt">
+				            <span class="_after"></span>
+				            <p>工具</p>
+				            <i class="list_dt_icon"></i>
+        				</dt>
+						<dd class="list_dd">
+							<ul>
+								<li class="list_li">
+									<div id="unableDraggableDiv" align="center" style="padding: 10px;">
+										<i id="mouseToolsBtn" class="fa fa-mouse-pointer fa-2x showItemTxt" aria-hidden="true" type="2"></i>
+										<span hidden="hidden">鼠标工具</span>
+									</div>
+								</li>
+								<li class="list_li">
+									<div id="enableDraggableDiv" align="center" style="padding: 10px;">
+										<i id="connectionToolsBtn" class="fa fa-level-down fa-3x showItemTxt" aria-hidden="true" type="2"></i>
+										<span hidden="hidden">连线工具</span>
+									</div>
+								</li>
+							</ul>
+						</dd>
+						<dt class="list_dt">
+				            <span class="_after"></span>
+				            <p>节点</p>
+				            <i class="list_dt_icon"></i>
+        				</dt>
+						<dd class="list_dd">
+							<ul>
+								<li class="list_li">
+									<div id="start" href="javascript: void(0);" class="startNode controler" style="margin-left: 20px; margin-top: 6px;">
+										<span>开始</span>
+									</div>
+								</li>
+								<li class="list_li">
+									<div id="end" href="javascript: void(0);" class="endNode controler" style="margin-left: 20px; margin-top: 6px;">
+										<span>结束</span>
+									</div>
+								</li>
+								<li class="list_li">
+									<div id="gateWay" href="javascript: void(0);" class="gateWayNode controler" style="margin-top: 23px; margin-left: 53px;">
+										<span>同意？</span>
+									</div>
+								</li>
+								<li class="list_li">
+									<div id="event" href="javascript: void(0);" class="eventNode controler" style="margin-left: 20px; margin-top: 6px;">
+										<span>事件</span>
+									</div>
+								</li>
+								<li class="list_li">
+									<div id="comm" href="javascript: void(0);" class="commNode controler" style="margin-top: 12px;">
+										<span>人工活动</span>
+										<i class="layui-icon layui-icon-username" style="font-size: 20px; color: #666666; position: absolute; right: 78px; margin-top: -12px;"></i>
+									</div>
+								</li>
+								<li class="list_li">
+									<div id="freedom" href="javascript: void(0);" class="commNode controler" style="margin-top: 12px;">
+										<span>自由活动</span>
+										<i class="layui-icon layui-icon-set-sm" style="font-size: 20px; color: #666666; position: absolute; right: 78px; margin-top: -12px;"></i>
+									</div>
+								</li>
+							</ul>
+						</dd>
+						<dt class="list_dt">
+				            <span class="_after"></span>
+				            <p>子流程</p>
+				            <i class="list_dt_icon"></i>
+        				</dt>
+						<dd class="list_dd">
+							<ul>
+								<li class="list_li">
+									<div id="innerChildFlow" href="javascript: void(0);" class="innerChildFlowNode controler" style="margin-top: 12px;">
+										<span>内部子流程</span>
+									</div>
+								</li>
+								<li class="list_li">
+									<div id="outerChildFlow" href="javascript: void(0);" class="outerChildFlowNode controler" style="margin-top: 12px;">
+										<span>外部子流程</span>
+									</div>
+								</li>
+							</ul>
+						</dd>
+						<dt class="list_dt">
+				            <span class="_after"></span>
+				            <p>泳道</p>
+				            <i class="list_dt_icon"></i>
+        				</dt>
+						<dd class="list_dd">
+							<ul>
+								<li class="list_li">
+									<div id="broadwiseLane" href="javascript: void(0);" class="broadwiseLaneNode controler" style="margin-top: 12px;">
+										<span>横向泳道</span>
+									</div>
+								</li>
+								<li class="list_li">
+									<div id="directionLane" href="javascript: void(0);" class="directionLaneNode controler" style="margin-top: 12px;">
+										<span>纵向泳道</span>
+									</div>
+								</li>
+							</ul>
+						</dd>
+					</dl>
+				</div>
+			</div>
+
+			<!-- 流程图绘制区域 -->
+			<div id="canvasId" class="layui-body canvasClass" style="top: 80px;">
+				<div id="Container"></div>
+			</div>
+			
+			<!-- 底部固定区域 -->
+			<div class="layui-footer" align="center">
+				<p>联科BPM流程绘制 V1.0</p>
+			</div>
+		</div>
+
+	</body>
+	
+	<!-- 注意Ready.js要放在最后面 -->
+	<script type="text/javascript" src="../js/jquery-1.11.0.min.js"></script>
+	<script type="text/javascript" src="../js/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="../js/jsplumb.min.js"></script>
+	<script type="text/javascript" src="../layui/layui.all.js"></script>
+	<script type="text/javascript" src="../js/web.contextmenu.js"></script>
+	<script type="text/javascript" src="../js/graphlib.min.js"></script>
+	<script type="text/javascript" src="../js/html2canvas.min.js"></script>
+	<script type="text/javascript" src="../js/canvg.js"></script>
+	
+	<script type="text/javascript" src="../myjs/GlobalVar.js"></script>
+	<script type="text/javascript" src="../myjs/FlowChartsData.js"></script>
+	<script type="text/javascript" src="../util/StringUtils.js"></script>
+	<script type="text/javascript" src="../util/GraphlibUtils.js"></script>
+	<script type="text/javascript" src="../util/LayuiUtils.js"></script>
+	<script type="text/javascript" src="../util/JsPlumbUtils.js"></script>
+	<script type="text/javascript" src="../myjs/MyLayui.js"></script>
+	<script type="text/javascript" src="../myjs/RightMenu.js"></script>
+	<script type="text/javascript" src="../myjs/MyFunction.js"></script>
+	<script type="text/javascript" src="../myjs/Ready.js"></script>
+
+	<script>
+		/**
+		 * 手风琴菜单效果
+		 */
+		$(".list_dt").on("click", function() {
+			$('.list_dd').stop();
+			$(this).siblings("dt").removeAttr("id");
+			if($(this).attr("id") == "open") {
+				$(this).removeAttr("id").siblings("dd").slideUp();
+			} else {
+				$(this).attr("id", "open").next().slideDown().siblings("dd").slideUp();
+			}
+		});
+	</script>
+
+</html>
